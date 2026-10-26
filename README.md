@@ -247,16 +247,6 @@ The system will be assessed using:
 - Redact sensitive information before transmitting evidence to external LLM services.
 - Require engineer validation before taking remediation actions.
 
-## Inspiration and Attribution
-
-OpsLens AI is inspired by the open-source [OPSLENS-AI project by ahmedadel248](https://github.com/ahmedadel248/OPSLENS-AI).
-
-The proposed implementation draws architectural inspiration from its specialized infrastructure agents, Supervisor-driven evidence correlation, and separation between deterministic data collection and LLM-based root-cause reasoning.
-
-This project additionally proposes a React-based dashboard, persistent incident history, reproducible Kubernetes failure scenarios, and structured evaluation of investigation quality.
-
-Any reuse of source code from the original repository will be subject to its applicable license terms.
-
 ## License
 
 License to be determined before public distribution.
