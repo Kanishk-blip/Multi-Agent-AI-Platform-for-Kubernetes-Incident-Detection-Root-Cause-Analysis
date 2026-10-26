@@ -1,334 +1,262 @@
 # OpsLens AI
 
-**OpsLens AI** is an AI-powered multi-agent AIOps platform for Kubernetes incident investigation and root-cause analysis.
+### Multi-Agent AIOps Platform for Kubernetes Incident Investigation and Root-Cause Analysis
 
-The system helps DevOps, SRE, and AIOps teams investigate infrastructure and application failures by collecting evidence from Kubernetes events, logs, workload configuration, node metrics, and pod-level telemetry. Specialized agents analyze these signals, a Supervisor Agent coordinates the investigation and correlates findings, and an LLM reasoning agent generates an evidence-based incident report with probable root cause, confidence level, recommended next actions, validation checks, and technical evidence.
+OpsLens AI is a proposed multi-agent infrastructure observability platform designed to help DevOps and Site Reliability Engineering (SRE) teams investigate Kubernetes failures.
 
----
+The system uses specialized agents to collect and analyze Kubernetes events, application logs, workload configurations, and infrastructure metrics. A Supervisor Agent coordinates the investigation, correlates evidence, and passes structured findings to an LLM Reasoning Agent to generate explainable Root Cause Analysis (RCA) reports.
 
-## Project Goal
+**Project Status:** Under Development
 
-Modern cloud-native systems generate large volumes of operational signals from Kubernetes resources, logs, events, metrics, and configuration. During incidents, engineers often need to manually inspect multiple sources and correlate symptoms to identify the real root cause.
+## Overview
 
-OpsLens AI aims to automate this investigation workflow by:
+Modern cloud-native applications generate large amounts of operational data across Kubernetes clusters, including logs, events, resource metrics, and configuration changes.
 
-* Collecting evidence from Kubernetes workloads, services, events, logs, and metrics.
-* Running specialized agents for different operational signal types.
-* Detecting node-level and pod-level resource anomalies.
-* Coordinating multi-agent findings through a Supervisor-driven orchestration layer.
-* Separating the primary incident from related findings and noisy signals.
-* Using an LLM reasoning agent to generate clear, evidence-based RCA reports.
-* Providing safe recommended next actions and validation checks for human review.
+Identifying the root cause of an incident requires engineers to correlate information across multiple components, distinguish symptoms from underlying failures, and interpret complex infrastructure behavior.
 
----
+OpsLens AI aims to automate this investigation process through a supervisor-driven multi-agent architecture that combines deterministic evidence collection with Generative AI reasoning.
 
 ## Key Features
 
-### Multi-Agent Investigation Pipeline
+### 1. Multi-Agent Infrastructure Investigation
 
-OpsLens AI uses a modular multi-agent architecture where each agent focuses on a specific type of operational evidence:
+The platform is designed around seven specialized agents:
 
-* Kubernetes Events Agent
-* Application Logs Agent
-* Workload Configuration Agent
-* Node Resource Metrics Agent
-* Pod LSTM Metrics Agent
-* Supervisor Agent
-* LLM Reasoning Agent
+- **Kubernetes Events Agent:** Analyzes pod lifecycle events, scheduling failures, container restarts, and health probe failures.
+- **Application Logs Agent:** Inspects container logs to identify application errors, exceptions, and startup failures.
+- **Workload Configuration Agent:** Examines deployments, services, configuration settings, selectors, and health probes.
+- **Node Resource Metrics Agent:** Analyzes CPU, memory utilization, and resource pressure across Kubernetes nodes.
+- **Pod Metrics Agent:** Detects unusual resource consumption and investigates pod-level anomalies using statistical techniques and potentially LSTM-based models.
+- **Supervisor Agent:** Coordinates specialized agents, consolidates evidence, and identifies relationships between infrastructure signals.
+- **LLM Reasoning Agent:** Uses structured evidence to produce root-cause explanations, incident summaries, and recommended corrective actions.
 
-This design keeps the system explainable, extensible, and easier to debug compared to a single monolithic incident analyzer.
+### 2. Supervisor-Driven Agent Orchestration
 
----
+A centralized Supervisor Agent manages the investigation pipeline.
 
-### Supervisor-Driven Orchestration
+Each specialized agent independently analyzes its assigned infrastructure signals and returns structured findings.
 
-The investigation workflow is coordinated through a **Supervisor-driven orchestration layer**.
+The Supervisor aggregates these outputs, filters irrelevant observations, correlates related failures, and prepares an evidence-based context for the reasoning layer.
 
-The Supervisor coordinates agent execution, aggregates multi-agent findings, filters noise, identifies the primary incident, separates related findings, and passes structured evidence to the LLM reasoning agent for root-cause analysis.
+This approach separates infrastructure data collection from LLM reasoning.
 
-This allows the system to avoid directly sending raw, noisy cluster data to the LLM. Instead, the LLM receives structured and evidence-grounded investigation context.
+### 3. Kubernetes Infrastructure Monitoring
 
----
+OpsLens AI is designed to investigate common Kubernetes operational issues, including:
 
-### Node-Level Anomaly Detection
+- Pod crashes and repeated container restarts.
+- `CrashLoopBackOff` and `OOMKilled` conditions.
+- CPU and memory resource exhaustion.
+- Misconfigured readiness and liveness probes.
+- Failed deployments and image pull errors.
+- Service connectivity and configuration issues.
 
-OpsLens AI includes node-level resource analysis to detect abnormal infrastructure behavior such as unusual CPU or memory pressure at the node level.
+### 4. AI-Powered Root Cause Analysis
 
-This helps distinguish between:
+The LLM Reasoning Agent receives structured technical evidence rather than unrestricted raw infrastructure data.
 
-* Infrastructure-level resource pressure.
-* Application-specific workload failures.
-* Pod-level resource anomalies.
+It generates an RCA report containing:
 
-Node-level anomaly detection is useful when several workloads on the same node may be affected by shared resource pressure.
+- Incident description and affected resources.
+- Most likely root cause.
+- Supporting logs, events, and metrics.
+- Related infrastructure anomalies.
+- Recommended diagnostic and corrective actions.
+- Validation steps for engineers.
 
----
+### 5. Infrastructure Anomaly Detection
 
-### Pod-Level LSTM Anomaly Detection
+The planned anomaly detection module examines node and pod resource utilization to identify unexpected operational behavior.
 
-OpsLens AI includes a time-aware LSTM-based Pod Metrics Agent for pod-level anomaly detection.
+The implementation will initially use statistical baselines and threshold-based approaches, with LSTM-based time-series anomaly detection evaluated as an extension.
 
-The model analyzes pod CPU and memory telemetry over time and detects abnormal behavior beyond static threshold-based monitoring. This allows the system to identify resource anomalies based on historical patterns rather than only fixed CPU or memory limits.
+### 6. Incident Dashboard and History
 
-The Pod LSTM Metrics Agent helps detect cases such as:
+A React-based dashboard is planned to provide a centralized interface for reviewing:
 
-* Abnormal Pod CPU usage.
-* Abnormal Pod memory behavior.
-* Resource patterns that deviate from learned telemetry history.
+- Kubernetes incident summaries.
+- Investigation status and agent findings.
+- Infrastructure metrics.
+- Root-cause reports.
+- Historical incidents and recurring failures.
 
----
+Incident records and investigation results will be stored in PostgreSQL.
 
-### Kubernetes Incident Analysis
+### 7. Secure, Read-Only Investigation
 
-OpsLens AI can investigate and reason over common Kubernetes failure patterns, including:
+The platform follows a human-in-the-loop investigation model.
 
-* Service selector mismatch.
-* Empty or missing service endpoints.
-* Readiness probe failures.
-* CrashLoopBackOff and startup failures.
-* Missing runtime configuration.
-* OOMKilled workloads.
-* Pod-level CPU and memory anomalies.
-* Related but non-primary findings within the same namespace.
+Specialized agents use scoped, read-only Kubernetes permissions. The LLM is not permitted to execute arbitrary commands or modify infrastructure resources.
 
----
+Generated remediation recommendations require engineer review before execution.
 
-### LLM-Based Root-Cause Reasoning
+## System Architecture
 
-The LLM reasoning agent is used for explanation and report generation, not for direct cluster execution.
+```mermaid
+flowchart TD
+    A[Incident Alert / Manual Trigger] --> B[FastAPI Backend]
+    B --> C[Supervisor Agent]
 
-The LLM receives structured evidence from the Supervisor and generates:
+    C --> D[Kubernetes Events Agent]
+    C --> E[Application Logs Agent]
+    C --> F[Workload Configuration Agent]
+    C --> G[Node Resource Metrics Agent]
+    C --> H[Pod Metrics Agent]
 
-* Incident summary.
-* Probable root cause.
-* Root-cause story.
-* Confidence level.
-* Recommended next actions.
-* Validation checks.
-* Related findings.
-* Technical evidence summary.
+    D --> I[Evidence Collection and Correlation]
+    E --> I
+    F --> I
+    G --> I
+    H --> I
 
-This makes the final report easier for engineers to understand while keeping the reasoning grounded in collected evidence.
+    I --> J[LLM Reasoning Agent]
+    J --> K[Evidence and Safety Validation]
+    K --> L[Root Cause Analysis Report]
 
----
-
-### Safety and Evidence Alignment
-
-OpsLens AI includes a Python safety and consistency layer to keep LLM output aligned with the collected evidence.
-
-The safety layer helps ensure that:
-
-* LLM recommendations are treated as recommended next actions, not guaranteed fixes.
-* Suggested actions remain aligned with the identified incident.
-* Dangerous or destructive commands are avoided.
-* Report content remains consistent across the web interface and PDF export.
-* The final output is suitable for human review before any real operational action.
-
----
-
-## High-Level Architecture
-
-```text
-User Investigation Scope
-        ↓
-Collectors
-        ↓
-Specialized Agents
-        ↓
-Supervisor-Driven Orchestration
-        ↓
-Structured Evidence
-        ↓
-LLM Reasoning Agent
-        ↓
-Safety & Consistency Layer
-        ↓
-Final RCA Report
+    L --> M[(PostgreSQL)]
+    M --> N[React Dashboard]
 ```
-
----
 
 ## Investigation Workflow
 
-1. The user selects the investigation scope, including node, namespace, and incident focus.
-2. Collectors gather Kubernetes events, workload state, logs, configuration data, and metrics.
-3. Specialized agents analyze each evidence type independently.
-4. The Supervisor coordinates the investigation and correlates agent findings.
-5. The Supervisor identifies the primary incident and separates related findings from noise.
-6. Structured evidence is passed to the LLM reasoning agent.
-7. The LLM generates an evidence-based RCA report.
-8. The safety layer validates the output and keeps recommendations aligned with collected evidence.
-9. The final report is displayed in the interface and can be exported as a PDF.
+**Step 1 — Incident Detection**
 
----
+An incident alert is received, or an engineer initiates an investigation for a specific Kubernetes workload.
 
-## Agents
+**Step 2 — Evidence Collection**
 
-| Agent                        | Responsibility                                                                                                                           |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Kubernetes Events Agent      | Reads Kubernetes lifecycle events and detects signals such as failed probes, restarts, BackOff states, and workload availability issues. |
-| Application Logs Agent       | Analyzes application and container logs to extract runtime errors, tracebacks, fatal startup messages, and connection failures.          |
-| Workload Configuration Agent | Inspects Kubernetes workload configuration, service relationships, selectors, probes, endpoints, and availability signals.               |
-| Node Resource Metrics Agent  | Detects abnormal node-level CPU and memory behavior to identify possible infrastructure pressure.                                        |
-| Pod LSTM Metrics Agent       | Uses a time-aware LSTM model to detect abnormal pod-level CPU and memory behavior from telemetry history.                                |
-| Supervisor Agent             | Coordinates agent execution, aggregates findings, identifies the primary incident, filters noise, and prepares structured evidence.      |
-| LLM Reasoning Agent          | Converts structured evidence into a human-readable root-cause analysis report with recommended next actions and validation checks.       |
+The system collects Kubernetes events, container logs, workload configurations, and infrastructure metrics.
 
----
+**Step 3 — Specialized Agent Analysis**
 
-## LLM Reasoning Design
+Each worker agent independently examines its assigned evidence and produces structured technical findings.
 
-OpsLens AI separates evidence collection, reasoning, and execution.
+**Step 4 — Evidence Correlation**
 
-The LLM is responsible for:
+The Supervisor Agent combines the findings, correlates observations using timestamps and resource identifiers, and identifies the most relevant failure signals.
 
-* Explaining the incident in a clear operational story.
-* Connecting technical evidence to probable root cause.
-* Generating recommended next actions.
-* Producing validation checks.
-* Creating a readable RCA report for engineers.
+**Step 5 — LLM-Based Reasoning**
 
-Python and deterministic logic are responsible for:
+The Reasoning Agent uses the consolidated evidence to generate a root-cause hypothesis and supporting explanation.
 
-* Collecting Kubernetes evidence.
-* Running detection agents.
-* Structuring Supervisor findings.
-* Validating and sanitizing report output.
-* Preventing unsafe or hallucinated remediation guidance.
+**Step 6 — Validation and Reporting**
 
-This design allows flexible LLM reasoning while keeping the investigation evidence-based and safe for human review.
+The system validates the report structure, checks evidence references, and presents the final findings for engineer review.
 
----
+**Step 7 — Incident History**
 
-## Runbook Knowledge Base
-
-OpsLens AI includes a runbook knowledge base for known operational patterns.
-
-Known signals can be mapped to trusted markdown runbooks through:
-
-```text
-knowledge_base/runbook_registry.json
-```
-
-Runbooks provide additional remediation context and operational guidance when the detected incident matches a known pattern.
-
-Example structure:
-
-```text
-knowledge_base/
-├── runbook_registry.json
-└── runbooks/
-```
-
----
-
-## Reproducible Kubernetes Incident Cases
-
-The project includes reproducible Kubernetes incident cases to validate the investigation pipeline end-to-end.
-
-Examples include:
-
-* Service selector mismatch.
-* Readiness probe failure.
-* CrashLoop startup error.
-* Missing environment variable traceback.
-* OOMKilled worker.
-* Pod CPU anomaly.
-* Readiness issue with a related CPU-heavy neighbor pod.
-
-These cases are used to test evidence collection, agent analysis, Supervisor correlation, LLM reasoning, and final report generation.
-
----
+Investigation results are persisted for future reference and analysis.
 
 ## Technology Stack
 
-* **Python**
-* **FastAPI**
-* **Kubernetes**
-* **kubectl**
-* **Kubernetes Metrics API**
-* **TensorFlow / Keras**
-* **LSTM-based anomaly detection**
-* **Gemini LLM**
-* **HTML, CSS, JavaScript**
-* **PDF report generation**
-* **Runbook knowledge base**
-
----
+| Component | Technology |
+|---|---|
+| Programming Language | Python |
+| Backend Framework | FastAPI |
+| Agent Architecture | Supervisor–Worker Multi-Agent System |
+| Generative AI | Gemini / OpenAI API |
+| Kubernetes Integration | Kubernetes Python Client |
+| Containerization | Docker |
+| Container Orchestration | Kubernetes |
+| Monitoring | Prometheus, Kubernetes Metrics API |
+| Anomaly Detection | Statistical Analysis, LSTM |
+| Database | PostgreSQL |
+| Frontend | React, TypeScript, Tailwind CSS |
+| Testing | Pytest |
+| CI/CD | GitHub Actions |
 
 ## Project Structure
 
 ```text
-OpsLens-AI/
-├── ansible/
-├── artifacts/
-├── data/
-├── knowledge_base/
-│   ├── runbook_registry.json
-│   └── runbooks/
-├── prompts/
-├── reports/
+opslens-ai/
+├── backend/
+│   ├── app/
+│   │   ├── agents/
+│   │   │   ├── supervisor/
+│   │   │   ├── kubernetes_events/
+│   │   │   ├── application_logs/
+│   │   │   ├── workload_config/
+│   │   │   ├── node_metrics/
+│   │   │   ├── pod_metrics/
+│   │   │   └── llm_reasoning/
+│   │   ├── api/
+│   │   ├── collectors/
+│   │   ├── core/
+│   │   ├── models/
+│   │   ├── services/
+│   │   └── security/
+│   └── tests/
+├── frontend/
+├── infrastructure/
+│   ├── docker/
+│   └── kubernetes/
 ├── scenarios/
-├── src/
-│   ├── agents/
-│   ├── api/
-│   ├── collectors/
-│   ├── core/
-│   ├── knowledge/
-│   ├── schemas/
-│   ├── utils/
+├── knowledge_base/
+│   └── runbooks/
+├── docs/
+├── .github/
 │   └── workflows/
-├── tools/
-├── web/
-│   ├── app.js
-│   ├── index.html
-│   └── styles.css
-├── requirements.txt
 └── README.md
 ```
 
----
+*The structure above represents the proposed organization of the implementation.*
 
-## Current Scope
+## Incident Scenarios
 
-The current version focuses on:
+The project will be evaluated against controlled Kubernetes failure scenarios.
 
-* Kubernetes incident investigation.
-* Node and namespace scoped analysis.
-* Multi-agent evidence collection and correlation.
-* Node-level resource anomaly detection.
-* Pod-level LSTM anomaly detection.
-* LLM-assisted root-cause analysis.
-* Evidence-based recommended next actions.
-* PDF and interface-based incident report generation.
-* Reproducible Kubernetes incident validation cases.
+| Scenario | Expected Investigation |
+|---|---|
+| CrashLoopBackOff | Identify application startup errors and container restart patterns |
+| OOMKilled | Correlate memory limits, pod metrics, and container termination events |
+| Readiness Probe Failure | Examine probe configuration and application health |
+| Service Selector Mismatch | Identify inconsistencies between service selectors and pod labels |
+| ImagePullBackOff | Examine image references and image retrieval failures |
+| CPU Saturation | Correlate resource usage with workload degradation |
 
----
+## Evaluation Metrics
 
-## Future Work
+The system will be assessed using:
 
-Planned future enhancements include:
+- **Root-Cause Accuracy:** Percentage of incidents where the system correctly identifies the known failure.
+- **Evidence Traceability:** Whether RCA conclusions reference relevant operational evidence.
+- **Investigation Latency:** Time required to generate an incident analysis.
+- **Reliability:** System behavior when observability tools or LLM services are unavailable.
+- **Security:** Enforcement of read-only Kubernetes permissions and safe AI tool usage.
 
-* Integrating LangGraph for more advanced stateful multi-agent orchestration.
-* Adding Prometheus support for richer historical metrics.
-* Expanding the runbook knowledge base.
-* Adding more Kubernetes and Linux incident categories.
-* Improving multi-incident grouping across larger namespaces.
-* Adding automated smoke tests and CI checks.
-* Supporting more advanced report comparison and incident history analytics.
+## Development Roadmap
 
----
+- [ ] Set up FastAPI backend and Kubernetes test environment.
+- [ ] Implement Kubernetes event and application log collectors.
+- [ ] Develop workload configuration and resource metrics agents.
+- [ ] Implement Supervisor Agent and evidence correlation.
+- [ ] Integrate Gemini or OpenAI for structured RCA generation.
+- [ ] Introduce security controls and evidence validation.
+- [ ] Build React dashboard and PostgreSQL incident history.
+- [ ] Add fault injection scenarios and automated tests.
+- [ ] Configure Docker-based development and GitHub Actions CI/CD.
+- [ ] Evaluate LSTM-based anomaly detection against simpler approaches.
 
-## Security Notes
+## Security Considerations
 
-* LLM-generated recommendations are not executed automatically.
-* Recommended actions are intended for human review before execution.
-* Destructive commands are avoided or filtered by the safety layer.
-* API keys, secrets, kubeconfig files, `.env` files, and cloud credentials should not be committed.
-* Runtime reports and generated investigation data should be excluded from source control when appropriate.
+- Use least-privilege Kubernetes RBAC permissions.
+- Restrict AI agents to approved read-only operations.
+- Treat logs, external inputs, and collected evidence as untrusted data.
+- Never execute LLM-generated infrastructure commands automatically.
+- Protect API credentials and sensitive configuration values.
+- Redact sensitive information before transmitting evidence to external LLM services.
+- Require engineer validation before taking remediation actions.
 
----
+## Inspiration and Attribution
 
-## Status
+OpsLens AI is inspired by the open-source [OPSLENS-AI project by ahmedadel248](https://github.com/ahmedadel248/OPSLENS-AI).
 
-OpsLens AI is an active graduation project focused on multi-agent AIOps, Kubernetes incident investigation, anomaly detection, Supervisor-driven orchestration, and LLM-assisted root-cause analysis.
+The proposed implementation draws architectural inspiration from its specialized infrastructure agents, Supervisor-driven evidence correlation, and separation between deterministic data collection and LLM-based root-cause reasoning.
+
+This project additionally proposes a React-based dashboard, persistent incident history, reproducible Kubernetes failure scenarios, and structured evaluation of investigation quality.
+
+Any reuse of source code from the original repository will be subject to its applicable license terms.
+
+## License
+
+License to be determined before public distribution.
